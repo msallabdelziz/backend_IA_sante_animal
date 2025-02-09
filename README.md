@@ -48,33 +48,19 @@ git clone https://github.com/msallabdelaziz/backend_IA_sante_animal.git
 
 
 2. Accédez au répertoire
-bash
-Copier
-Modifier
 cd backend_IA_sante_animal
 
 3. Installez les dépendances
-bash
-Copier
-Modifier
 npm install
 
 4. Configurez les variables d'environnement
 Créez un fichier .env à la racine du projet et ajoutez :
-
-env
-Copier
-Modifier
 MONGO_URI=mongodb://127.0.0.1:27017/db_app_ia
 JWT_SECRET=votre_cle_secrete
 PORT=3000
 
 5. Lancez le serveur
 En mode développement :
-
-bash
-Copier
-Modifier
 npm run dev
 
 🔗 Principales Routes API
