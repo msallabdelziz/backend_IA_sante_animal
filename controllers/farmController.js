@@ -28,6 +28,7 @@ const getMyFarms = asyncHandler(async (req, res) => {
   res.status(200).json(farms);
 });
 
+
 // 3. Mettre à jour une ferme
 const updateFarm = asyncHandler(async (req, res) => {
   const farm = await Farm.findById(req.params.id);
@@ -72,5 +73,20 @@ const deleteFarm = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Ferme supprimée avec succès.' });
 });
 
+// 5. Obtenir toutes les fermes (pour les admins uniquement)
+const getAllFarms = asyncHandler(async (req, res) => {
+  // Vérification du rôle de l'utilisateur
+  if (req.user.role !== 'admin') {
+    res.status(403);
+    throw new Error('Accès refusé. Cette ressource est réservée aux administrateurs.');
+  }
+
+  // Récupération de toutes les fermes avec les informations des propriétaires
+  const farms = await Farm.find().populate('owner', 'firstName lastName email');
+  res.status(200).json(farms);
+});
+
+
+
 // Export des fonctions
-module.exports = { createFarm, getMyFarms, updateFarm, deleteFarm };
+module.exports = { createFarm, getMyFarms, updateFarm, deleteFarm, getAllFarms };

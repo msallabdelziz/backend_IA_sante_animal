@@ -44,7 +44,6 @@ const registerUser = asyncHandler(async (req, res) => {
   });
   
 
-
 // Connexion d'un utilisateur
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;

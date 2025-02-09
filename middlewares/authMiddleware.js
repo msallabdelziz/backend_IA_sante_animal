@@ -38,13 +38,29 @@ const protect = asyncHandler(async (req, res, next) => {
  * Middleware pour vérifier que l'utilisateur a le rôle 'admin'
  */
 const admin = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
+  if (req.user && req.user.role === 'admin') {
+    next(); // Passe au middleware suivant si le rôle est correct
+  } else {
+    res.status(403); // Forbidden
+    throw new Error('Accès non autorisé, rôle admin requis');
+  }
+};
+
+/**
+ * Middleware pour vérifier que l'utilisateur a l'un des rôles autorisés
+ * @param {...string} roles Liste des rôles autorisés
+ */
+const authorizeRoles = (...roles) => {
+  return asyncHandler((req, res, next) => {
+    // Vérification que l'utilisateur est connecté et que son rôle est autorisé
+    if (req.user && roles.includes(req.user.role)) {
       next(); // Passe au middleware suivant si le rôle est correct
     } else {
       res.status(403); // Forbidden
-      throw new Error('Accès non autorisé, rôle admin requis');
+      throw new Error('Accès non autorisé, rôle insuffisant');
     }
-  };
-  
-module.exports = { protect, admin };
-  
+  });
+};
+
+// Export des middlewares
+module.exports = { protect, admin, authorizeRoles };
