@@ -1,10 +1,15 @@
 const express = require('express');
 const { registerUser, loginUser } = require('../controllers/userController');
+const { protect, admin } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
-// Routes utilisateurs
-router.post('/register', registerUser);
+// Route pour l'inscription (protection avec middleware admin)
+router.post('/register', protect, admin, registerUser);
+
+// Route pour la connexion
 router.post('/login', loginUser);
+
+// router.post('/create-admin', createInitialAdmin);
 
 // // Route protégée pour l'accès au profil utilisateur
 // router.get('/profile', protect, async (req, res) => {
