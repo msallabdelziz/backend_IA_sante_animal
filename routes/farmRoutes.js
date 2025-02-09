@@ -28,5 +28,4 @@ router.delete('/:id', protect, deleteFarm);
 router.get('/all', protect, admin, getAllFarms);
 
 
-
 module.exports = router;

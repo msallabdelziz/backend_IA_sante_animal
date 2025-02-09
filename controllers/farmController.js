@@ -87,6 +87,5 @@ const getAllFarms = asyncHandler(async (req, res) => {
 });
 
 
-
 // Export des fonctions
 module.exports = { createFarm, getMyFarms, updateFarm, deleteFarm, getAllFarms };
