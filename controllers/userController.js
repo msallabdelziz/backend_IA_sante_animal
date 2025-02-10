@@ -69,7 +69,6 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 });
 
-  
 
 // Connexion d'un utilisateur
 const loginUser = asyncHandler(async (req, res) => {
@@ -109,39 +108,141 @@ const loginUser = asyncHandler(async (req, res) => {
   };
   
 
-// const createInitialAdmin = asyncHandler(async (req, res) => {
-//   const adminExists = await User.findOne({ role: 'admin' });
-//   if (adminExists) {
-//       res.status(400);
-//       throw new Error('Admin already exists');
-//   }
+// Consulter son profil
+const getUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
 
-//   const salt = await bcrypt.genSalt(10);
-//   const hashedPassword = await bcrypt.hash('admin123', salt); // Mot de passe par défaut
+  if (!user) {
+      res.status(404);
+      throw new Error('Utilisateur introuvable.');
+  }
 
-//   const admin = await User.create({
-//       firstName: 'Super',
-//       lastName: 'Admin',
-//       email: 'admin@example.com',
-//       phone: '0758378844',
-//       password: hashedPassword,
-//       role: 'admin',
-//   });
+  res.status(200).json(user);
+});
 
-//   if (admin) {
-//       res.status(201).json({
-//           _id: admin.id,
-//           firstName: admin.firstName,
-//           lastName: admin.lastName,
-//           email: admin.email,
-//           phone: admin.phone,
-//           role: admin.role,
-//       });
-//   } else {
-//       res.status(400);
-//       throw new Error("Failed to create admin");
-//   }
-// });
+// Lister tous les utilisateurs (Admin uniquement)
+const getAllUsers = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin') {
+    res.status(403); // Forbidden
+    throw new Error('Accès refusé : seul un administrateur peut voir tous les utilisateurs');
+  }
+
+  const users = await User.find({}).select('-password'); // Ne pas inclure les mots de passe
+  res.status(200).json(users);
+});
 
 
-module.exports = {registerUser, loginUser };
+// Mettre à jour son profil (Mot de passe & Numéro de téléphone uniquement)
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('Utilisateur introuvable.');
+  }
+
+  const { phone, password } = req.body;
+
+  // Mettre à jour le numéro de téléphone
+  if (phone) {
+    const phoneExists = await User.findOne({ phone });
+    if (phoneExists && phoneExists._id.toString() !== req.user._id.toString()) {
+      res.status(400);
+      throw new Error('Ce numéro de téléphone est déjà utilisé.');
+    }
+    user.phone = phone; // Mise à jour du téléphone
+  }
+
+  // Mettre à jour le mot de passe
+  if (password) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt); // Hachage et mise à jour du mot de passe
+  }
+
+  // Enregistrer les modifications
+  const updatedUser = await user.save();
+
+  res.status(200).json({
+    _id: updatedUser.id,
+    firstName: updatedUser.firstName,
+    lastName: updatedUser.lastName,
+    email: updatedUser.email,
+    phone: updatedUser.phone,
+    role: updatedUser.role,
+  });
+});
+
+
+// Mettre à jour un utilisateur (Par Admin uniquement)
+const updateUser = asyncHandler(async (req, res) => {
+  if (!req.user || req.user.role !== 'admin') {
+      res.status(403); // Forbidden
+      throw new Error('Accès refusé : seul un admin peut mettre à jour un utilisateur.');
+  }
+
+  // const { id } = req.params;
+
+  //   // Vérifiez si l'ID est valide
+  //   if (!mongoose.Types.ObjectId.isValid(id)) {
+  //       res.status(400);
+  //       throw new Error('ID utilisateur invalide');
+  //   }
+
+
+  const { firstName, lastName, email, phone, role, password } = req.body;
+
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+      res.status(404);
+      throw new Error('Utilisateur introuvable.');
+  }
+
+  // Mise à jour des champs
+  user.firstName = firstName || user.firstName;
+  user.lastName = lastName || user.lastName;
+  user.email = email || user.email;
+  user.phone = phone || user.phone;
+  user.role = role || user.role;
+
+  if (password) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+  }
+
+  const updatedUser = await user.save();
+
+  res.status(200).json({
+      _id: updatedUser.id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      role: updatedUser.role,
+  });
+});
+
+// Supprimer un utilisateur (Admin uniquement)
+const deleteUser = asyncHandler(async (req, res) => {
+  // Vérifier si l'utilisateur connecté est un admin
+  if (!req.user || req.user.role !== 'admin') {
+      res.status(403); // Forbidden
+      throw new Error('Accès refusé : seul un admin peut supprimer un utilisateur.');
+  }
+
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+      res.status(404);
+      throw new Error('Utilisateur introuvable.');
+  }
+
+  // Utiliser findByIdAndDelete pour supprimer directement l'utilisateur
+  await User.findByIdAndDelete(req.params.id);
+
+  res.status(200).json({ message: 'Utilisateur supprimé avec succès.' });
+});
+
+// Export des fonctions
+
+module.exports = {registerUser, loginUser, getUserProfile, getAllUsers, updateUserProfile, updateUser,deleteUser };
