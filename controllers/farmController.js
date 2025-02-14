@@ -3,19 +3,26 @@
 const asyncHandler = require('express-async-handler');
 const Farm = require('../models/Farm');
 
-// 1. Créer une nouvelle ferme
+// 1. Créer une nouvelle ferme (en sélectionnant des catégories existantes)
 const createFarm = asyncHandler(async (req, res) => {
   const { name, location, categories } = req.body;
 
-  if (!name || !location) {
+  if (!name || !location || !categories || categories.length === 0) {
     res.status(400);
-    throw new Error('Veuillez fournir un nom et une localisation pour la ferme.');
+    throw new Error("Veuillez fournir un nom, une localisation et au moins une catégorie.");
+  }
+
+  // Vérifier si toutes les catégories existent
+  const existingCategories = await Category.find({ _id: { $in: categories } });
+  if (existingCategories.length !== categories.length) {
+    res.status(400);
+    throw new Error("Une ou plusieurs catégories sélectionnées sont invalides.");
   }
 
   const farm = await Farm.create({
     name,
     location,
-    owner: req.user._id, // Propriétaire (lié à l'utilisateur connecté)
+    owner: req.user._id,
     categories,
   });
 
