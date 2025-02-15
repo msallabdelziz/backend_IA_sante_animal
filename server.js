@@ -26,6 +26,9 @@ app.use('/api/users', userRoutes);
 const farmRoutes = require('./routes/farmRoutes');
 app.use('/api/farms', farmRoutes);
 
+const categoryRoutes = require('./routes/categoryRoutes')
+app.use('/api/categories', categoryRoutes)
+
 
 // Définir le port
 const PORT = process.env.PORT || 3000;
