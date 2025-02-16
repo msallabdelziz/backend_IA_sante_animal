@@ -5,7 +5,8 @@ const {
   createCategory,
   getAllCategories,
   updateCategory,
-  deleteCategory,
+  desactivateCategory,
+  reactivateCategory,
   addSpeciesToCategory,
   updateSpeciesInCategory,
   deleteSpeciesFromCategory
@@ -23,8 +24,11 @@ router.get('/', protect, getAllCategories);
 // Mettre à jour une catégorie (Admin uniquement)
 router.put('/:id', protect, admin, updateCategory);
 
-// Supprimer une catégorie (Admin uniquement)
-router.delete('/:id', protect, admin, deleteCategory);
+// Desactiver une catégorie (Admin uniquement)
+router.delete('/:id', protect, admin, desactivateCategory);
+
+// Activer une catégorie (Admin uniquement)
+router.put('/:id/reactivate', protect, admin, reactivateCategory);
 
 // Ajouter une espèce à une catégorie
 router.post('/:categoryId/species', protect, admin, addSpeciesToCategory);

@@ -25,13 +25,29 @@ const createCategory = asyncHandler(async (req, res) => {
 
 // 2. Obtenir toutes les catégories
 const getAllCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find();
+  const categories = await Category.find({ isActive:{ $ne: false } }); // Exclure les catégories désactivées
   res.status(200).json(categories);
 });
 
-// 3. Mettre à jour une catégorie (Admin uniquement)
+// 3. Mettre à jour uniquement le nom d'une catégorie (Admin uniquement)
 const updateCategory = asyncHandler(async (req, res) => {
-  const { name, species } = req.body;
+    const { name } = req.body; 
+    const category = await Category.findById(req.params.id);
+  
+    if (!category) {
+      res.status(404);
+      throw new Error('Catégorie introuvable.');
+    }
+  
+    category.name = name || category.name; // Mise à jour uniquement du `name`
+  
+    const updatedCategory = await category.save();
+    res.status(200).json(updatedCategory);
+  });
+
+
+// 4-1. Désactiver une catégorie au lieu de la supprimer définitivement (Admin uniquement)
+const desactivateCategory = asyncHandler(async (req, res) => {
   const category = await Category.findById(req.params.id);
 
   if (!category) {
@@ -39,28 +55,40 @@ const updateCategory = asyncHandler(async (req, res) => {
     throw new Error('Catégorie introuvable.');
   }
 
-  category.name = name || category.name;
-  category.species = species || category.species;
-
-  const updatedCategory = await category.save();
-  res.status(200).json(updatedCategory);
-});
-
-// 4. Supprimer une catégorie (Admin uniquement)
-const deleteCategory = asyncHandler(async (req, res) => {
-  const category = await Category.findById(req.params.id);
-
-  if (!category) {
-    res.status(404);
-    throw new Error('Catégorie introuvable.');
+  if (!category.isActive) {
+    res.status(400);
+    throw new Error('Cette catégorie est déjà desactive.');
   }
 
-  await category.deleteOne();
-  res.status(200).json({ message: 'Catégorie supprimée avec succès.' });
+
+  category.isActive = false; // Désactivation au lieu de suppression
+  await category.save();
+
+  res.status(200).json({ message: 'Catégorie désactivée avec succès.' });
 });
 
+//4-2 Réactiver une catégorie désactivée (Admin uniquement)
+const reactivateCategory = asyncHandler(async (req, res) => {
+    const category = await Category.findById(req.params.id);
+  
+    if (!category) {
+      res.status(404);
+      throw new Error('Catégorie introuvable.');
+    }
+  
+    if (category.isActive) {
+      res.status(400);
+      throw new Error('Cette catégorie est déjà active.');
+    }
+  
+    category.isActive = true; // Réactivation de la catégorie
+    await category.save();
+  
+    res.status(200).json({ message: 'Catégorie réactivée avec succès.', category });
+  });
 
-// Ajouter une espèce dans une catégorie
+
+// 5. Ajouter une espèce à une catégorie
 const addSpeciesToCategory = asyncHandler(async (req, res) => {
     const { categoryId } = req.params;
     const { species } = req.body;
@@ -87,7 +115,8 @@ const addSpeciesToCategory = asyncHandler(async (req, res) => {
     res.status(200).json(category);
 });
 
-// Modifier une espèce dans une catégorie
+
+// 6. Modifier une espèce dans une catégorie
 const updateSpeciesInCategory = asyncHandler(async (req, res) => {
     const { categoryId, speciesName } = req.params;
     const { newSpecies } = req.body;
@@ -109,7 +138,7 @@ const updateSpeciesInCategory = asyncHandler(async (req, res) => {
     res.status(200).json(category);
 });
 
-// Supprimer une espèce d'une catégorie
+// 7. Supprimer une espèce d'une catégorie
 const deleteSpeciesFromCategory = asyncHandler(async (req, res) => {
     const { categoryId, speciesName } = req.params;
 
@@ -139,7 +168,8 @@ module.exports = {
     createCategory,
     getAllCategories,
     updateCategory,
-    deleteCategory,
+    desactivateCategory,
+    reactivateCategory,
     addSpeciesToCategory,
     updateSpeciesInCategory,
     deleteSpeciesFromCategory 
